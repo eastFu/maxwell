@@ -3,8 +3,8 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>com.zendesk</groupId>
-  <artifactId>maxwell</artifactId>
-  <version>1.17.1</version>
+  <artifactId>maxwell-X</artifactId>
+  <version>0.0.1</version>
   <packaging>jar</packaging>
 
   <name>maxwell</name>

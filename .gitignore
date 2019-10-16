@@ -1,5 +1,6 @@
 data/*.yaml
 config/*.yml
+/target
 /config.properties
 /maxwell.position
 /.idea
@@ -12,4 +13,3 @@ config/*.yml
 .classpath
 .project
 .settings/
-/target
