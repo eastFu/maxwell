@@ -12,3 +12,4 @@ config/*.yml
 .classpath
 .project
 .settings/
+/target
