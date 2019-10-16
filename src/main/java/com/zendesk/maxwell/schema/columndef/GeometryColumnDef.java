@@ -3,7 +3,6 @@ package com.zendesk.maxwell.schema.columndef;
 import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.io.ParseException;
 import com.vividsolutions.jts.io.WKBReader;
-import com.zendesk.maxwell.producer.MaxwellOutputConfig;
 
 import java.util.Arrays;
 
@@ -11,12 +10,12 @@ import java.util.Arrays;
  * Created by ben on 12/30/15.
  */
 public class GeometryColumnDef extends ColumnDef {
-	public GeometryColumnDef(String name, String type, short pos) {
+	public GeometryColumnDef(String name, String type, int pos) {
 		super(name, type, pos);
 	}
 
 	@Override
-	public Object asJSON(Object value, MaxwellOutputConfig config) {
+	public Object asJSON(Object value) {
 		Geometry geometry = null;
 		if ( value instanceof Geometry ) {
 			geometry = (Geometry) value;

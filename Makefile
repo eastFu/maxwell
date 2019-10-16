@@ -8,10 +8,10 @@ test:
 	mvn -B test -P ${KAFKA_PROFILE}
 
 compile:
-	mvn -B compile -P ${KAFKA_PROFILE}
+	mvn compile -P ${KAFKA_PROFILE}
 
 clean:
-	mvn -B clean
+	mvn clean
 
 depclean: clean
 	rm -f $(CLASSPATH)

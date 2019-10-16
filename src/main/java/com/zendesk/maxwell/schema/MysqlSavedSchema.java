@@ -6,6 +6,7 @@ import java.util.*;
 import java.io.IOException;
 
 import com.github.shyiko.mysql.binlog.GtidSet;
+import com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException;
 
 import com.fasterxml.jackson.databind.JavaType;
 import com.zendesk.maxwell.CaseSensitivity;
@@ -116,7 +117,7 @@ public class MysqlSavedSchema {
 			connection.setAutoCommit(false);
 			this.schemaID = saveSchema(connection);
 			connection.commit();
-		} catch ( SQLIntegrityConstraintViolationException e ) {
+		} catch ( MySQLIntegrityConstraintViolationException e ) {
 			connection.rollback();
 
 			connection.setAutoCommit(true);
@@ -329,7 +330,6 @@ public class MysqlSavedSchema {
 		}
 	}
 
-	/* build up a map-of-maps from schema_id -> { col -> val } */
 	private HashMap<Long, HashMap<String, Object>> buildSchemaMap(Connection conn) throws SQLException {
 		HashMap<Long, HashMap<String, Object>> schemas = new HashMap<>();
 
@@ -346,12 +346,6 @@ public class MysqlSavedSchema {
 		rs.close();
 		return schemas;
 	}
-
-	/*
-		builds a linked list of schema_ids in which the head of the list
-		is the fullly-captured inital schema, and the tail is the final
-		delta-schema
-	 */
 
 	private LinkedList<Long> buildSchemaChain(HashMap<Long, HashMap<String, Object>> schemas, Long schema_id) {
 		LinkedList<Long> schemaChain = new LinkedList<>();
@@ -469,7 +463,7 @@ public class MysqlSavedSchema {
 
 		Database currentDatabase = null;
 		Table currentTable = null;
-		short columnIndex = 0;
+		int columnIndex = 0;
 
 		while (rs.next()) {
 			// Database

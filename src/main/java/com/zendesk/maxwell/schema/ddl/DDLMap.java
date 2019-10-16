@@ -6,7 +6,6 @@ import com.zendesk.maxwell.producer.MaxwellOutputConfig;
 import com.zendesk.maxwell.replication.BinlogPosition;
 import com.zendesk.maxwell.replication.Position;
 import com.zendesk.maxwell.row.RowMap;
-import com.zendesk.maxwell.row.FieldNames;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -18,15 +17,13 @@ public class DDLMap extends RowMap {
 	private final Long timestamp;
 	private final String sql;
 	private Position position;
-	private final Long schemaId;
 
-	public DDLMap(ResolvedSchemaChange change, Long timestamp, String sql, Position position, Position nextPosition, Long schemaId) {
+	public DDLMap(ResolvedSchemaChange change, Long timestamp, String sql, Position position, Position nextPosition) {
 		super("ddl", change.databaseName(), change.tableName(), timestamp, new ArrayList<>(0), position, nextPosition, sql);
 		this.change = change;
 		this.timestamp = timestamp;
 		this.sql = sql;
 		this.position = position;
-		this.schemaId = schemaId;
 	}
 
 	public String pkToJson(KeyFormat keyFormat) throws IOException {
@@ -59,13 +56,10 @@ public class DDLMap extends RowMap {
 
 		BinlogPosition binlogPosition = position.getBinlogPosition();
 		if ( outputConfig.includesBinlogPosition ) {
-			map.put(FieldNames.POSITION, binlogPosition.getFile() + ":" + binlogPosition.getOffset());
+			map.put("position", binlogPosition.getFile() + ":" + binlogPosition.getOffset());
 		}
 		if ( outputConfig.includesGtidPosition) {
-			map.put(FieldNames.GTID, binlogPosition.getGtid());
-		}
-		if ( outputConfig.includesSchemaId) {
-			map.put(FieldNames.SCHEMA_ID, this.schemaId);
+			map.put("gtid", binlogPosition.getGtid());
 		}
 		return new ObjectMapper().writeValueAsString(map);
 	}

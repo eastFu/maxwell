@@ -102,7 +102,7 @@ HASH_FUNCTION is _hashCode_. Murmurhash3 may be set with the
 `kafka_partition_hash` option. The seed value for the murmurhash function is
 hardcoded to 25342 in the MaxwellKafkaPartitioner class.
 
-The HASH_STRING may be (_database_, _table_, _primary_key_, _transaction_id_, _column_).  The
+The HASH_STRING may be (_database_, _table_, _primary_key_, _column_).  The
 default HASH_STRING is the _database_. The partitioning field can be configured
 using the `producer_partition_by` option.
 
@@ -125,36 +125,10 @@ You will need to obtain an IAM user that has the following permissions for the s
 - "kinesis:PutRecord"
 - "kinesis:PutRecords"
 - "kinesis:DescribeStream"
-
-Additionally, the producer will need to be able to produce CloudWatch metrics which requires the following permission applied to the resource `*``:
 - "cloudwatch:PutMetricData"
 
-The resulting IAM policy document may look like this:
-```json
-{
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Effect": "Allow",
-            "Action": [
-                "kinesis:PutRecord",
-                "kinesis:PutRecords",
-                "kinesis:DescribeStream"
-            ],
-            "Resource": "arn:aws:kinesis:us-west-2:123456789012:stream/my-stream"
-        },
-        {
-            "Effect": "Allow",
-            "Action": [
-                "cloudwatch:PutMetricData"
-            ],
-            "Resource": "*"
-        }
-    ]
-}
-```
-
 See the [AWS docs](http://docs.aws.amazon.com/streams/latest/dev/controlling-access.html#kinesis-using-iam-examples) for the latest examples on which permissions are needed.
+
 
 The producer uses the [DefaultAWSCredentialsProviderChain](http://docs.aws.amazon.com/AWSJavaSDK/latest/javadoc/com/amazonaws/auth/DefaultAWSCredentialsProviderChain.html) class to gain aws credentials.
 See the [AWS docs](http://docs.aws.amazon.com/sdk-for-java/v1/developer-guide/credentials.html) on how to setup the IAM user with the Default Credential Provider Chain.
@@ -232,7 +206,7 @@ For more details on these options, you are encouraged to the read official Rabbi
 
 ### Redis
 ***
-Set the output stream in `config.properties` by setting the `redis_pub_channel` property for redis_type = pubsub, `redis_stream_key` property for redis_type = xadd, or set the `redis_list_key` property when using redis_type = lpush.
+Set the output stream in `config.properties` by setting the `redis_pub_channel` property for redis_type = pubsub or set the `redis_list_key` property when using redis_type = lpush.
 
 Other configurable properties are:
 
@@ -241,10 +215,7 @@ Other configurable properties are:
 - `redis_auth` - defaults to **null**
 - `redis_database` - defaults to **0**
 - `redis_type` - defaults to **pubsub**
-- `redis_pub_channel` - defaults to **maxwell**
 - `redis_list_key` - defaults to **maxwell**
-- `redis_stream_key` - defaults to **maxwell**
-- `redis_stream_json_key` - defaults to **message**
 
 ### Custom Producer
 ***

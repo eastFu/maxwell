@@ -1,7 +1,6 @@
 package com.zendesk.maxwell.schema.columndef;
 
 import com.github.shyiko.mysql.binlog.event.deserialization.json.JsonBinary;
-import com.zendesk.maxwell.producer.MaxwellOutputConfig;
 import com.zendesk.maxwell.row.RawJSONString;
 
 import java.io.IOException;
@@ -9,12 +8,12 @@ import java.io.IOException;
 import static com.github.shyiko.mysql.binlog.event.deserialization.ColumnType.*;
 
 public class JsonColumnDef extends ColumnDef {
-	public JsonColumnDef(String name, String type, short pos) {
+	public JsonColumnDef(String name, String type, int pos) {
 		super(name, type, pos);
 	}
 
 	@Override
-	public Object asJSON(Object value, MaxwellOutputConfig config) {
+	public Object asJSON(Object value) {
 		String jsonString;
 
 		if ( value instanceof String ) {

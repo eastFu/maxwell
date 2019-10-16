@@ -2,49 +2,30 @@ package com.zendesk.maxwell.schema.columndef;
 
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.zendesk.maxwell.producer.MaxwellOutputConfig;
-import com.zendesk.maxwell.util.DynamicEnum;
 
 @JsonSerialize(using=ColumnDefSerializer.class)
 @JsonDeserialize(using=ColumnDefDeserializer.class)
 
-public abstract class ColumnDef implements Cloneable {
-	private static DynamicEnum dynamicEnum = new DynamicEnum(Byte.MAX_VALUE);
+public abstract class ColumnDef {
 	protected String name;
-	protected byte type;
-	protected short pos;
+	protected String type;
+
+	protected int pos;
 
 	public ColumnDef() { }
-	public ColumnDef(String name, String type, short pos) {
+	public ColumnDef(String name, String type, int pos) {
 		this.name = name;
+		this.type = type;
 		this.pos = pos;
-		this.type = (byte) dynamicEnum.get(type);
 	}
 
 	public abstract String toSQL(Object value);
 
-	@Deprecated
 	public Object asJSON(Object value) {
-		return asJSON(value, new MaxwellOutputConfig());
-	}
-
-	public Object asJSON(Object value, MaxwellOutputConfig config) {
 		return value;
 	}
 
-	public ColumnDef clone() {
-		try {
-			return (ColumnDef) super.clone();
-		} catch (CloneNotSupportedException e) {
-			return null;
-		}
-	}
-
-	public static ColumnDef build(String name, String charset, String type, short pos, boolean signed, String enumValues[], Long columnLength) {
-		name = name.intern();
-		if ( charset != null )
-			charset = charset.intern();
-
+	public static ColumnDef build(String name, String charset, String type, int pos, boolean signed, String enumValues[], Long columnLength) {
 		switch(type) {
 		case "tinyint":
 		case "smallint":
@@ -201,14 +182,14 @@ public abstract class ColumnDef implements Cloneable {
 	}
 
 	public String getType() {
-		return dynamicEnum.get(type);
+		return type;
 	}
 
 	public int getPos() {
 		return pos;
 	}
 
-	public void setPos(short i) {
+	public void setPos(int i) {
 		this.pos = i;
 	}
 }

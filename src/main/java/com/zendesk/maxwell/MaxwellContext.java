@@ -1,6 +1,8 @@
 package com.zendesk.maxwell;
 
-import com.zendesk.maxwell.bootstrap.BootstrapController;
+import com.zendesk.maxwell.bootstrap.AbstractBootstrapper;
+import com.zendesk.maxwell.bootstrap.AsynchronousBootstrapper;
+import com.zendesk.maxwell.bootstrap.NoOpBootstrapper;
 import com.zendesk.maxwell.bootstrap.SynchronousBootstrapper;
 import com.zendesk.maxwell.filtering.Filter;
 import com.zendesk.maxwell.monitoring.*;
@@ -51,7 +53,7 @@ public class MaxwellContext {
 
 	private final HeartbeatNotifier heartbeatNotifier;
 	private final MaxwellDiagnosticContext diagnosticContext;
-	private BootstrapController bootstrapController;
+
 
 	public MaxwellContext(MaxwellConfig config) throws SQLException, URISyntaxException {
 		this.config = config;
@@ -61,7 +63,6 @@ public class MaxwellContext {
 
 		this.replicationConnectionPool = new ConnectionPool("ReplicationConnectionPool", 10, 0, 10,
 				config.replicationMysql.getConnectionURI(false), config.replicationMysql.user, config.replicationMysql.password);
-		this.replicationConnectionPool.setCaching(false);
 
 		if (config.schemaMysql.host == null) {
 			this.schemaConnectionPool = null;
@@ -262,9 +263,6 @@ public class MaxwellContext {
 	}
 
 	public void setPosition(Position position) {
-		if ( position == null )
-			return;
-
 		this.getPositionStoreThread().setPosition(position);
 	}
 
@@ -304,12 +302,30 @@ public class MaxwellContext {
 	}
 
 	public CaseSensitivity getCaseSensitivity() throws SQLException {
-		if ( this.caseSensitivity == null ) {
-			try (Connection c = getReplicationConnection()) {
-				this.caseSensitivity = MaxwellMysqlStatus.captureCaseSensitivity(c);
+		if ( this.caseSensitivity != null )
+			return this.caseSensitivity;
+
+		try ( Connection c = getReplicationConnection()) {
+			ResultSet rs = c.createStatement().executeQuery("select @@lower_case_table_names");
+			if ( !rs.next() )
+				throw new RuntimeException("Could not retrieve @@lower_case_table_names!");
+
+			int value = rs.getInt(1);
+			switch(value) {
+				case 0:
+					this.caseSensitivity = CaseSensitivity.CASE_SENSITIVE;
+					break;
+				case 1:
+					this.caseSensitivity = CaseSensitivity.CONVERT_TO_LOWER;
+					break;
+				case 2:
+					this.caseSensitivity = CaseSensitivity.CONVERT_ON_COMPARE;
+					break;
+				default:
+					throw new RuntimeException("Unknown value for @@lower_case_table_names: " + value);
 			}
+			return this.caseSensitivity;
 		}
-		return this.caseSensitivity;
 	}
 
 	public AbstractProducer getProducer() throws IOException {
@@ -348,10 +364,10 @@ public class MaxwellContext {
 				this.producer = new RabbitmqProducer(this);
 				break;
 			case "redis":
-				this.producer = new MaxwellRedisProducer(this, this.config.redisType);
+				this.producer = new MaxwellRedisProducer(this, this.config.redisPubChannel, this.config.redisListKey, this.config.redisType);
 				break;
 			case "none":
-				this.producer = new NoneProducer(this);
+				this.producer = null;
 				break;
 			default:
 				throw new RuntimeException("Unknown producer type: " + this.config.producerType);
@@ -372,34 +388,16 @@ public class MaxwellContext {
 		return this.producer;
 	}
 
-	public synchronized BootstrapController getBootstrapController(Long currentSchemaID) throws IOException {
-		if ( this.bootstrapController != null ) {
-			return this.bootstrapController;
+	public AbstractBootstrapper getBootstrapper() throws IOException {
+		switch ( this.config.bootstrapperType ) {
+			case "async":
+				return new AsynchronousBootstrapper(this);
+			case "sync":
+				return new SynchronousBootstrapper(this);
+			default:
+				return new NoOpBootstrapper(this);
 		}
 
-		if ( this.config.bootstrapperType.equals("none") )
-			return null;
-
-		SynchronousBootstrapper bootstrapper = new SynchronousBootstrapper(this);
-		this.bootstrapController = new BootstrapController(
-			this.getMaxwellConnectionPool(),
-			this.getProducer(),
-			bootstrapper,
-			this.config.clientID,
-			this.config.bootstrapperType.equals("sync"),
-			currentSchemaID
-		);
-
-		new Thread(() -> {
-			try {
-				this.bootstrapController.runLoop();
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-		}, "maxwell-bootstrap-controller").start();
-
-		addTask(this.bootstrapController);
-		return this.bootstrapController;
 	}
 
 	public Filter getFilter() {

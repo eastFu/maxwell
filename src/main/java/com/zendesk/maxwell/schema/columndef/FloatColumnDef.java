@@ -2,7 +2,7 @@ package com.zendesk.maxwell.schema.columndef;
 
 public class FloatColumnDef extends ColumnDef {
 	public FloatColumnDef() { }
-	public FloatColumnDef(String name, String type, short pos) {
+	public FloatColumnDef(String name, String type, int pos) {
 		super(name, type, pos);
 	}
 

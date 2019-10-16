@@ -67,23 +67,11 @@ public class WrappedRowMap {
 		return row.getTimestamp();
 	}
 
-	public String getQuery() {
-		return row.getRowQuery();
-	}
-
-	public void setQuery(String query) {
-		row.setRowQuery(query);
-	}
-
 	public void suppress() {
 		row.suppress();
 	}
 
 	public void setKafka_topic(String topic) {
 		row.setKafkaTopic(topic);
-	}
-
-	public void setPartition_string(String partitionString) {
-		row.setPartitionString(partitionString);
 	}
 }

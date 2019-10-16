@@ -1,7 +1,6 @@
 package com.zendesk.maxwell.replication;
 
 import com.github.shyiko.mysql.binlog.event.*;
-import com.zendesk.maxwell.producer.MaxwellOutputConfig;
 import com.zendesk.maxwell.row.RowMap;
 import com.zendesk.maxwell.schema.Table;
 import com.zendesk.maxwell.schema.columndef.ColumnDef;
@@ -13,21 +12,19 @@ public class BinlogConnectorEvent {
 	public static final String BEGIN = "BEGIN";
 	public static final String COMMIT = "COMMIT";
 	public static final String SAVEPOINT = "SAVEPOINT";
-	private final MaxwellOutputConfig outputConfig;
 	private BinlogPosition position;
 	private BinlogPosition nextPosition;
 	private final Event event;
 	private final String gtidSetStr;
 	private final String gtid;
 
-	public BinlogConnectorEvent(Event event, String filename, String gtidSetStr, String gtid, MaxwellOutputConfig outputConfig) {
+	public BinlogConnectorEvent(Event event, String filename, String gtidSetStr, String gtid) {
 		this.event = event;
 		this.gtidSetStr = gtidSetStr;
 		this.gtid = gtid;
 		EventHeaderV4 hV4 = (EventHeaderV4) event.getHeader();
 		this.nextPosition = new BinlogPosition(gtidSetStr, gtid, hV4.getNextPosition(), filename);
 		this.position = new BinlogPosition(gtidSetStr, gtid, hV4.getPosition(), filename);
-		this.outputConfig = outputConfig;
 	}
 
 	public Event getEvent() {
@@ -108,7 +105,7 @@ public class BinlogConnectorEvent {
 			if ( includedColumns.get(colIdx) ) {
 				Object json = null;
 				if ( data[dataIdx] != null ) {
-					json = cd.asJSON(data[dataIdx], outputConfig);
+					json = cd.asJSON(data[dataIdx]);
 				}
 				row.putData(cd.getName(), json);
 				dataIdx++;
@@ -124,7 +121,7 @@ public class BinlogConnectorEvent {
 			if ( oldIncludedColumns.get(colIdx) ) {
 				Object json = null;
 				if ( oldData[dataIdx] != null ) {
-					json = cd.asJSON(oldData[dataIdx], outputConfig);
+					json = cd.asJSON(oldData[dataIdx]);
 				}
 
 				if (!row.hasData(cd.getName())) {

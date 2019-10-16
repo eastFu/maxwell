@@ -7,7 +7,6 @@ import com.zendesk.maxwell.producer.MaxwellOutputConfig;
 import com.zendesk.maxwell.row.RowMap;
 import com.zendesk.maxwell.schema.SchemaStoreSchema;
 import org.apache.commons.lang3.ArrayUtils;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.sql.ResultSet;
@@ -463,18 +462,6 @@ public class MaxwellIntegrationTest extends MaxwellTestWithIsolatedServer {
 	}
 
 	@Test
-	public void testHeartbeatsWithBlacklist() throws Exception {
-		Filter filter = new Filter("blacklist: maxwell.*");
-		getRowsForSQL(filter, testTransactions);
-
-		ResultSet rs = server.query("select * from maxwell.positions");
-		rs.next();
-
-		Long heartbeatRead = rs.getLong("last_heartbeat_read");
-		assertTrue(heartbeatRead > 0);
-	}
-
-	@Test
 	public void testRunMinimalBinlog() throws Exception {
 		requireMinimumVersion(server.VERSION_5_6);
 
@@ -531,8 +518,6 @@ public class MaxwellIntegrationTest extends MaxwellTestWithIsolatedServer {
 
 	@Test
 	public void testLowerCasingSensitivity() throws Exception {
-		org.junit.Assume.assumeTrue(MysqlIsolatedServer.getVersion().lessThan(8,0));
-
 		MysqlIsolatedServer lowerCaseServer = new MysqlIsolatedServer();
 
 
@@ -604,28 +589,8 @@ public class MaxwellIntegrationTest extends MaxwellTestWithIsolatedServer {
 
 	@Test
 	public void testJavascriptFilters() throws Exception {
-		requireMinimumVersion(server.VERSION_5_6);
-
 		String dir = MaxwellTestSupport.getSQLDir();
-		List<RowMap> rows = runJSON("/json/test_javascript_filters", (c) -> {
-			c.javascriptFile = dir + "/json/filter.javascript";
-			c.outputConfig.includesRowQuery = true;
-		});
-
-		boolean foundPartitionString = false;
-		for ( RowMap row : rows ) {
-			if ( row.getPartitionString() != null )
-				foundPartitionString = true;
-		}
-		assertTrue(foundPartitionString);
-	}
-
-	@Test
-	public void testJavascriptFiltersInjectRichValues() throws Exception {
-		String dir = MaxwellTestSupport.getSQLDir();
-		runJSON("/json/test_javascript_filters_rich_values", (c) -> {
-			c.javascriptFile = dir + "/json/filter_rich.javascript";
-		});
+		runJSON("/json/test_javascript_filters", (c) -> c.javascriptFile = dir + "/json/filter.javascript");
 	}
 
 	static String[] createDBSql = {

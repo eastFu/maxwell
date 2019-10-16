@@ -6,100 +6,29 @@ import com.zendesk.maxwell.util.StoppableTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
-import redis.clients.jedis.StreamEntryID;
-import redis.clients.jedis.exceptions.JedisConnectionException;
-import java.util.HashMap;
-import java.util.Map;
 
 public class MaxwellRedisProducer extends AbstractProducer implements StoppableTask {
 	private static final Logger logger = LoggerFactory.getLogger(MaxwellRedisProducer.class);
 	private final String channel;
-	private final String redisType;
+	private final String listkey;
+	private final String redistype;
 	private final Jedis jedis;
 
-	@Deprecated
 	public MaxwellRedisProducer(MaxwellContext context, String redisPubChannel, String redisListKey, String redisType) {
-		this(context, redisType);
-	}
-
-	public MaxwellRedisProducer(MaxwellContext context, String redisType) {
 		super(context);
 
-		if (this.context.getConfig().redisListKey != null) {
-			channel = context.getConfig().redisListKey;
-		}
-		else if (this.context.getConfig().redisStreamKey != null) {
-			channel = context.getConfig().redisStreamKey;
-		}
-		else {
-			channel = this.context.getConfig().redisPubChannel;
-		}
-
-		this.redisType = redisType;
+		channel = redisPubChannel;
+		listkey = redisListKey;
+		redistype = redisType;
 
 		jedis = new Jedis(context.getConfig().redisHost, context.getConfig().redisPort);
 		jedis.connect();
-
 		if (context.getConfig().redisAuth != null) {
 			jedis.auth(context.getConfig().redisAuth);
 		}
-
 		if (context.getConfig().redisDatabase > 0) {
 			jedis.select(context.getConfig().redisDatabase);
 		}
-	}
-
-	private void sendToRedis(RowMap msg) throws Exception {
-		String messageStr = msg.toJSON(outputConfig);
-
-		switch (redisType) {
-			case "lpush":
-				jedis.lpush(this.channel, messageStr);
-				break;
-			case "xadd":
-				Map<String, String> message = new HashMap<>();
-
-				String jsonKey = this.context.getConfig().redisStreamJsonKey;
-				
-				if (jsonKey == null) {
-					// TODO dot notated map impl in RowMap.toJson
-					throw new IllegalArgumentException("Stream requires key name for serialized JSON value");
-				}
-				else {
-					message.put(jsonKey, messageStr);
-				}
-
-				// TODO timestamp resolution coercion
-				// 			Seconds or milliseconds, never mixing precision
-				//      	DML events will natively emit millisecond precision timestamps
-				//      	CDC events will natively emit second precision timestamp
-				// TODO configuration option for if we want the msg timestamp to become the message ID
-				//			Requires completion of previous TODO
-				jedis.xadd(this.channel, StreamEntryID.NEW_ENTRY, message);
-				break;
-			case "pubsub":
-			default:
-				jedis.publish(this.channel, messageStr);
-				break;
-		}
-
-		if (logger.isDebugEnabled()) {
-			switch (redisType) {
-				case "lpush":
-					logger.debug("->  queue:" + channel + ", msg:" + msg);
-					break;
-				case "xadd":
-					logger.debug("->  stream:" + channel + ", msg:" + msg);
-					break;
-				case "pubsub":
-				default:
-					logger.debug("->  channel:" + channel + ", msg:" + msg);
-					break;
-			}
-		}
-
-		this.succeededMessageCount.inc();
-		this.succeededMessageMeter.mark();
 	}
 
 	@Override
@@ -109,29 +38,43 @@ public class MaxwellRedisProducer extends AbstractProducer implements StoppableT
 			return;
 		}
 
-		for (int cxErrors = 0; cxErrors < 2; cxErrors++) {
-			try {
-				this.sendToRedis(r);
-				break;
-			} catch (Exception e) {
-				if (e instanceof JedisConnectionException) {
-					logger.warn("lost connection to server, trying to reconnect...", e);
-					jedis.disconnect();
-					jedis.connect();
-				} else {
-					this.failedMessageCount.inc();
-					this.failedMessageMeter.mark();
-					logger.error("Exception during put", e);
+		String msg = r.toJSON(outputConfig);
+		try {
+			switch (redistype){
+				case "lpush":
+					jedis.lpush(this.listkey, msg);
+					break;
+				case "pubsub":
+				default:
+					jedis.publish(this.channel, msg);
+					break;
+			}
+			this.succeededMessageCount.inc();
+			this.succeededMessageMeter.mark();
+		} catch (Exception e) {
+			this.failedMessageCount.inc();
+			this.failedMessageMeter.mark();
+			logger.error("Exception during put", e);
 
-					if (!context.getConfig().ignoreProducerError) {
-						throw new RuntimeException(e);
-					}
-				}
+			if (!context.getConfig().ignoreProducerError) {
+				throw new RuntimeException(e);
 			}
 		}
 
-		if (r.isTXCommit()) {
+		if ( r.isTXCommit() ) {
 			context.setPosition(r.getNextPosition());
+		}
+
+		if ( logger.isDebugEnabled()) {
+			switch (redistype){
+				case "lpush":
+					logger.debug("->  queue:" + listkey + ", msg:" + msg);
+					break;
+				case "pubsub":
+				default:
+					logger.debug("->  channel:" + channel + ", msg:" + msg);
+					break;
+			}
 		}
 	}
 

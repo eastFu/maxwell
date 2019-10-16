@@ -48,18 +48,13 @@ public class TableAlter extends SchemaChange {
 			table.database = newDatabase;
 		}
 
-		List<DeferredPositionUpdate> deferred = new ArrayList<>();
 		for (ColumnMod mod : columnMods) {
-			mod.apply(table, deferred);
-		}
-
-		for ( DeferredPositionUpdate def : deferred ) {
-			table.moveColumn(def.column, def.position);
+			mod.apply(table);
 		}
 
 		if ( convertCharset != null ) {
 			for ( StringColumnDef sc : table.getStringColumns() ) {
-				if (sc.getCharset() == null || !sc.getCharset().toLowerCase().equals("binary") )
+				if ( !sc.getCharset().toLowerCase().equals("binary") )
 					sc.setCharset(convertCharset);
 			}
 		}

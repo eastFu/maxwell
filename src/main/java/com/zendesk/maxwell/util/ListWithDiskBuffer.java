@@ -94,10 +94,9 @@ public class ListWithDiskBuffer<T> {
 			os = new ObjectOutputStream(new BufferedOutputStream(new FileOutputStream(file)));
 		}
 
-		if ( elementsInFile == 0 ) {
+		if ( elementsInFile == 0 )
 			LOGGER.info("Overflowed in-memory buffer, spilling over into " + file);
-		}
-		
+
 		T evicted = this.list.removeFirst();
 		os.writeObject(evicted);
 

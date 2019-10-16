@@ -5,6 +5,7 @@ import com.zendesk.maxwell.row.RowMap;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.UUID;
 
 public abstract class AbstractMaxwellPartitioner {
 	List<String> partitionColumns = new ArrayList<String>();
@@ -21,8 +22,6 @@ public abstract class AbstractMaxwellPartitioner {
 				return PartitionBy.DATABASE;
 			case "primary_key":
 				return PartitionBy.PRIMARY_KEY;
-			case "transaction_id":
-				return PartitionBy.TRANSACTION_ID;
 			case "column":
 				return PartitionBy.COLUMN;
 			default:
@@ -46,6 +45,10 @@ public abstract class AbstractMaxwellPartitioner {
 		return r.getTable();
 	}
 
+	static protected String getPrimaryKey(RowMap r) {
+		return r.pkAsConcatString();
+	}
+
 	public String getHashString(RowMap r, PartitionBy by) {
 		switch ( by ) {
 			case TABLE:
@@ -57,9 +60,7 @@ public abstract class AbstractMaxwellPartitioner {
 			case DATABASE:
 				return r.getDatabase();
 			case PRIMARY_KEY:
-				return r.getRowIdentity().toConcatString();
-			case TRANSACTION_ID:
-				return String.valueOf(r.getXid());
+				return r.pkAsConcatString();
 			case COLUMN:
 				String s = r.buildPartitionKey(partitionColumns);
 				if ( s.length() > 0 )
@@ -71,9 +72,6 @@ public abstract class AbstractMaxwellPartitioner {
 	}
 
 	public String getHashString(RowMap r) {
-		if ( r.getPartitionString() != null )
-			return r.getPartitionString();
-		else
-			return getHashString(r, partitionBy);
+		return getHashString(r, partitionBy);
 	}
 }

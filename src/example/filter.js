@@ -8,7 +8,6 @@
  *
  * .suppress() -> call this to remove row from output
  * .kafka_topic = "topic" -> override the default kafka topic for this row
- * .partition_string = "string" -> override kafka/kinesis partition-by string
  * .data -> hash containing row data.  May be modified.
  * .old_data -> hash containing old data
  * .extra_attributes -> if you set values in this hash, they will be output at the top level of the final JSON
@@ -34,10 +33,6 @@ function process_row(row) {
 			}
 		} else if ( row.table == "other" ) {
 			row.kafka_topic = "other_kafka_topic";
-		} else if ( row.table == "iterate_me" ) {
-			for each (var key in row.data.keySet()) {
-				logger.info(row.data[key]);
-			}
 		}
 	}
 }
