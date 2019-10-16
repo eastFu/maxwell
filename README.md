@@ -2,8 +2,8 @@
 
 ## 1.背景介绍
 >基于mysql binlog实现的采集实时数据的中间件maxwell，进行了源码修改。 实现了自定义返回数据格式和程序默认将mysql转为utf8的乱码问题。
-
-> 基于1.17.1的版本进行的修改，下方为原始文件下载地址
+>
+> 对1.17.1的版本进行的修改，下方为原始文件下载地址
 
 &rarr; Download:
 [https://github.com/zendesk/maxwell/releases/download/v1.17.1/maxwell-1.17.1.tar.gz](https://github.com/zendesk/maxwell/releases/download/v1.17.1/maxwell-1.17.1.tar.gz)
