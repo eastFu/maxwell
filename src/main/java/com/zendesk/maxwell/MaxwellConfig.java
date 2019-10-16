@@ -127,7 +127,7 @@ public class MaxwellConfig extends AbstractConfig {
 	public String javascriptFile;
 	public Scripting scripting;
 
-	// 自定义参数 — 付东芳，2019年10月16日 15:17:30
+	// 自定义参数 ，2019年10月16日 15:17:30
 	public static String distid = "";
 
 	public MaxwellConfig() { // argv is only null in tests
@@ -358,9 +358,8 @@ public class MaxwellConfig extends AbstractConfig {
 	}
 
 	private void setup(OptionSet options, Properties properties) {
-		// 设置distid — 付东芳，2019年10月16日 15:19:55
+		// 设置distid — ，2019年10月16日 15:19:55
 		MaxwellConfig.distid = fetchOption("distid", options, properties, "");
-
 
 		this.log_level = fetchOption("log_level", options, properties, null);
 
