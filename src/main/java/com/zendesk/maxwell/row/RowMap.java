@@ -1,5 +1,6 @@
 package com.zendesk.maxwell.row;
 
+import com.google.gson.Gson;
 import com.zendesk.maxwell.MaxwellConfig;
 import com.zendesk.maxwell.errors.ProtectedAttributeNameException;
 import com.zendesk.maxwell.producer.EncryptionMode;
@@ -16,6 +17,9 @@ import java.io.UnsupportedEncodingException;
 import java.security.NoSuchAlgorithmException;
 import java.sql.Connection;
 import java.sql.ResultSet;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -168,7 +172,6 @@ public class RowMap implements Serializable {
 				Object pkValue = null;
 				if ( data.containsKey(pk) )
 					pkValue = data.get(pk);
-
 				writeValueToJSON(g, true, "pk." + pk.toLowerCase(), pkValue);
 			}
 		}
@@ -291,12 +294,22 @@ public class RowMap implements Serializable {
 			g.writeStringField("distid", MaxwellConfig.distid);
 		}
 
+
 		if ( outputConfig.includesRowQuery && this.rowQuery != null) {
 			g.writeStringField(FieldNames.QUERY, this.rowQuery);
 		}
 
 		g.writeStringField(FieldNames.TYPE, this.rowType);
 		g.writeNumberField(FieldNames.TIMESTAMP, this.timestampSeconds);
+
+
+		try {
+			DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+			LocalDateTime dateTime = LocalDateTime.ofEpochSecond(this.timestampSeconds,0, ZoneOffset.ofHours(8));
+			g.writeStringField("updateTime",dateTime.format(formatter));
+		}catch (Exception e){
+			LOGGER.error("set es value error", e.getMessage());
+		}
 
 		if ( outputConfig.includesCommitInfo ) {
 			if ( this.xid != null )
